@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fuel Price Checker</title>
+</head>
+<body>
+    <h2>Select Fuel Type</h2>
+    <select id="fuelType">
+        <option value="E10">E10</option>
+        <option value="U91">U91</option>
+        <option value="U95">U95</option>
+        <option value="U98">U98</option>
+        <option value="Diesel">Diesel</option>
+        <option value="LPG">LPG</option>
+    </select>
+    <button onclick="fetchPrices()">Fetch Prices</button>
+
+    <table border="1" id="resultsTable" style="display:none;">
+        <thead>
+            <tr>
+                <th>Price</th>
+                <th>Suburb</th>
+                <th>State</th>
+                <th>Fuel Type</th>
+                <th>Station Name</th>
+            </tr>
+        </thead>
+        <tbody id="resultsBody">
+        </tbody>
+    </table>
+
+    <script>
+        async function fetchPrices() {
+            const fuelType = document.getElementById("fuelType").value;
+            const response = await fetch("https://projectzerothree.info/api.php?format=json");
+            const data = await response.json();
+            const entries = [];
+            const seen_stations = new Set();
+
+            for (let region of data.regions) {
+                for (let price_obj of region.prices) {
+                    if (price_obj.name.includes("11-Seven") && price_obj.type === fuelType) {
+                        const entryKey = `${price_obj.name}-${price_obj.price}`;
+                        if (!seen_stations.has(entryKey)) {
+                            entries.push(price_obj);
+                            seen_stations.add(entryKey);
+                        }
+                    }
+                }
+            }
+            entries.sort((a, b) => a.price - b.price);
+
+            // Populate table with data
+            const resultsBody = document.getElementById("resultsBody");
+            resultsBody.innerHTML = "";
+            for (let entry of entries) {
+                const row = document.createElement("tr");
+                row.innerHTML = `
+                    <td>${entry.price}</td>
+                    <td>${entry.suburb}</td>
+                    <td>${entry.state}</td>
+                    <td>${entry.type}</td>
+                    <td>${entry.name}</td>
+                `;
+                resultsBody.appendChild(row);
+            }
+            document.getElementById("resultsTable").style.display = "block";
+        }
+    </script>
+</body>
+</html>
